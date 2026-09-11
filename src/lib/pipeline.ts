@@ -84,9 +84,9 @@ export const STAGES: StageMeta[] = [
     label: "Opportunities",
     shortLabel: "Opportunities",
     description:
-      "Combine capability and market evidence into ranked opportunity candidates — specific, not broad.",
-    produces: "A ranked Opportunity List.",
-    implemented: false,
+      "Score every approved capability on demand, buyer value, evidence, fit, and accessibility with a transparent scoring model — structured decision support, not a pretend objective measurement. Ranks the top 5.",
+    produces: "A ranked Opportunity list, with the case for #1 spelled out.",
+    implemented: true,
   },
   {
     key: "direction",
@@ -94,9 +94,9 @@ export const STAGES: StageMeta[] = [
     label: "Direction",
     shortLabel: "Direction",
     description:
-      "Decide which single opportunity to pursue first. This is the major human decision point: approve, reject, or ask for a different comparison.",
-    produces: "One approved Direction.",
-    implemented: false,
+      "Present the strongest 3-5 opportunities side by side with priority-based guidance. You choose one — the system does not decide for you and does not continue automatically.",
+    produces: "One SELECTED_DIRECTION, owned by you.",
+    implemented: true,
   },
   {
     key: "action_plan",
@@ -104,9 +104,9 @@ export const STAGES: StageMeta[] = [
     label: "Action Plan",
     shortLabel: "Action Plan",
     description:
-      "Turn the approved Direction into a sequenced set of next actions to build and test an offer.",
-    produces: "An Action Plan artifact.",
-    implemented: false,
+      "Turn the selected Direction into a 4-week VALIDATE → PACKAGE → PROVE → SELL path, executable by one person, with a decision gate at the end of each week.",
+    produces: "A 4-week Action Plan artifact.",
+    implemented: true,
   },
   {
     key: "offer",
@@ -114,9 +114,9 @@ export const STAGES: StageMeta[] = [
     label: "Offer",
     shortLabel: "Offer",
     description:
-      "Draft a specific, priced offer around the buyer's desired outcome — not around what you do.",
-    produces: "A draft Offer.",
-    implemented: false,
+      "Pre-fill and draft a specific offer around the buyer's desired outcome — every field comes with its recommendation, why, evidence, and confidence, and every field is yours to edit.",
+    produces: "A draft Offer document.",
+    implemented: true,
   },
   {
     key: "review",
@@ -124,9 +124,9 @@ export const STAGES: StageMeta[] = [
     label: "Review",
     shortLabel: "Review",
     description:
-      "Stress-test the Offer against the core principles — evidence, specificity, competitive positioning — before it goes to market.",
-    produces: "A reviewed, approved Offer.",
-    implemented: false,
+      "Attack the Offer before the market does: critical problems, important and optional improvements, a revised offer with material changes flagged for your approval, and a health score.",
+    produces: "A reviewed Offer, with a market-readiness verdict.",
+    implemented: true,
   },
   {
     key: "one_pager",

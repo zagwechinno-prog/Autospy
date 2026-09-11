@@ -47,10 +47,33 @@ engine spec:
    competitive intensity, pricing signals, entry barriers — distinguishing employment demand
    from service, consulting, and product demand. Every claim is sourced or explicitly labeled
    an inference; it does not recommend an opportunity yet, only presents the evidence.
+6. **Opportunities** — the **Opportunity Ranking Engine** scores every approved capability on
+   demand, buyer value, evidence, fit, and accessibility (0–10 each, explicitly framed as
+   decision support, not an objective measurement) and ranks the top 3–5. The composite score
+   is a geometric mean computed in code, never asked of the model. States plainly why #1
+   ranked first and what could change the ranking.
+7. **Direction** — the **Decision Guide** presents the strongest candidates with
+   priority-based guidance ("if your priority is X, choose A") and then gets out of the way:
+   picking one, and writing why, is a human action with no AI call involved. That choice
+   becomes `SELECTED_DIRECTION` and nothing continues automatically from it.
+8. **Action Plan** — the **Opportunity Execution Architect** turns the selected direction into
+   a 4-week VALIDATE → PACKAGE → PROVE → SELL path, each week with an objective, actions,
+   deliverable, success criteria, risks, and a decision gate. Executable by one person.
+9. **Offer** — the **Offer Architect** pre-fills all nine offer inputs (target customer,
+   problem, outcome, service, deliverables, timeline, pricing hypothesis, proof, positioning)
+   each with its own recommendation/why/evidence/confidence, then drafts the 13-field offer
+   document. Every field is directly editable; pricing is explicitly a hypothesis, never a
+   guaranteed result.
+10. **Review** — the **Offer Critic** attacks the offer across 14 dimensions, tries to
+    disprove it, and produces critical/important/optional findings plus a revised offer.
+    Material changes (a different buyer, problem, or promised outcome) are flagged rather than
+    silently applied — adopting the revision vs. keeping the original is a human decision.
+    Ends with a health score, a ready-for-market-test verdict, the biggest remaining risk, and
+    the next best action.
 
-Stages 6–15 (Opportunities through Optimization) are scaffolded in the pipeline UI with their
+Stages 11–15 (One-Pager through Optimization) are scaffolded in the pipeline UI with their
 purpose and expected output described, but not yet wired to the AI engine. They follow the
-same artifact-in → AI draft → human review → artifact-out pattern as the first five.
+same artifact-in → AI draft → human review → artifact-out pattern as the first ten.
 
 ## Architecture
 
@@ -58,8 +81,9 @@ same artifact-in → AI draft → human review → artifact-out pattern as the f
 - **`src/lib/pipeline.ts`** — the 15-stage definition (order, description, what it produces,
   whether it's implemented). This is the source of truth the stepper UI and routing key off.
 - **`src/lib/types.ts`** — the `OpportunitySession` data model: Experience intake, `ProfileRaw`,
-  Profile, Autopsy, Capabilities, Market, evidence tags, review status. Every stage reads/writes
-  this shared structure so context persists — nothing already known is asked for twice.
+  Profile, Autopsy, Capabilities, Market, Opportunities, Direction, Action Plan, Offer, Review —
+  evidence tags and review status throughout. Every stage reads/writes this shared structure so
+  context persists — nothing already known is asked for twice.
 - **`src/lib/store.ts`** — a simple file-based session store (`.data/sessions/<id>.json`).
   Good enough for single-user local/dev use; swap for a real database if this needs multiple
   concurrent users.
@@ -67,11 +91,16 @@ same artifact-in → AI draft → human review → artifact-out pattern as the f
   tool call matching a JSON schema, so every stage gets typed structured output instead of
   free text to parse.
 - **`src/lib/prompts/`** — one module per engine (`profile.ts`, `autopsy.ts`,
-  `capabilities.ts`, `market.ts`), each a direct implementation of its own system-role spec.
+  `capabilities.ts`, `market.ts`, `opportunities.ts`, `direction.ts`, `action-plan.ts`,
+  `offer.ts`, `review.ts`), each a direct implementation of its own system-role spec.
   `market.ts` is the one two-phase-but-different case: a free-form research call with the
   `web_search` server tool, then a `callStructured` pass to extract the structured reads.
+  `direction.ts` is the one stage where the actual selection is deliberately not an AI call —
+  only the priority-based guidance is generated; the pick is a human action.
 - **`src/app/api/session/...`** — REST-ish routes: create a session, submit Experience,
-  generate/review each of Profile, Autopsy, Capabilities, Market.
+  generate/review each of Profile, Autopsy, Capabilities, Market, Opportunities, Action Plan,
+  and Review; Direction has `generate` + `select`; Offer has `generate` + `review` (which both
+  saves edits and can approve).
 - **`src/app/pipeline/[id]/[stage]/page.tsx`** — the single pipeline shell: stepper nav across
   all 15 stages, stage-specific content component, locked stages until their predecessor is
   approved.
@@ -84,14 +113,14 @@ cp .env.example .env.local   # add your ANTHROPIC_API_KEY
 npm run dev
 ```
 
-Open http://localhost:3000, click through to Experience, and stages 2–5 will call the
+Open http://localhost:3000, click through to Experience, and stages 2–10 will call the
 Anthropic API once `ANTHROPIC_API_KEY` is set. Without a key, Experience intake still works;
 AI generation returns a clear error until a key is configured. The Market stage additionally
 requires your API key to have web search enabled.
 
 ## Extending a new stage
 
-Each of the remaining 10 stages follows the same shape as Profile/Autopsy/Capabilities:
+Each of the remaining 5 stages follows the same shape as Profile/Autopsy/Capabilities:
 
 1. Add fields to `OpportunitySession` in `src/lib/types.ts` for the stage's artifact.
 2. Write a prompt module in `src/lib/prompts/<stage>.ts` using `callStructured` (or the

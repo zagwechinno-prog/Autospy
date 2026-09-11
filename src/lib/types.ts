@@ -213,6 +213,182 @@ export interface MarketArtifact {
 }
 
 // ---------------------------------------------------------------------------
+// PROMPT 06 — Opportunity Ranking Engine → Opportunities
+// ---------------------------------------------------------------------------
+
+export interface OpportunityDimensionScores {
+  demand: number;
+  buyerValue: number;
+  evidence: number;
+  fit: number;
+  accessibility: number;
+}
+
+export interface RankedOpportunity {
+  id: string;
+  title: string;
+  scores: OpportunityDimensionScores;
+  /** 0-10, geometric mean of the five dimensions above — computed programmatically, never asked of the model. */
+  compositeScore: number;
+  rationale: string;
+  evidence: string;
+  marketEvidence: string;
+  buyer: string;
+  problem: string;
+  possibleOutcome: string;
+  potentialService: string;
+  majorRisk: string;
+  proofGap: string;
+  confidence: string;
+  reviewStatus: ReviewStatus;
+  userEdit?: string;
+}
+
+export interface OpportunitiesArtifact {
+  opportunities: RankedOpportunity[];
+  whyRankedFirst: string;
+  whatCouldChangeRanking: string;
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 07 — Decision Guide → Direction
+// ---------------------------------------------------------------------------
+
+export interface PriorityStatement {
+  priority: string;
+  recommendedOpportunityId: string;
+  rationale: string;
+}
+
+export interface SelectedDirection {
+  opportunityId: string;
+  opportunity: string;
+  capability: string;
+  targetBuyer: string;
+  problem: string;
+  desiredOutcome: string;
+  reasonSelected: string;
+  marketEvidence: string[];
+  userEvidence: string[];
+  knownRisks: string[];
+  openQuestions: string[];
+  selectedAt: string;
+}
+
+export interface DirectionArtifact {
+  candidateIds: string[];
+  priorityStatements: PriorityStatement[];
+  selected?: SelectedDirection;
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 08 — Opportunity Execution Architect → Action Plan
+// ---------------------------------------------------------------------------
+
+export type ActionPlanWeekLabel = "VALIDATE" | "PACKAGE" | "PROVE" | "SELL";
+
+export interface ActionPlanWeek {
+  weekNumber: 1 | 2 | 3 | 4;
+  label: ActionPlanWeekLabel;
+  objective: string;
+  whyItMatters: string;
+  actions: string[];
+  deliverable: string;
+  successCriteria: string;
+  timeRequired: string;
+  risks: string[];
+  decisionGate: string;
+}
+
+export interface ActionPlanArtifact {
+  weeks: ActionPlanWeek[];
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 09 — Offer Architect → Offer
+// ---------------------------------------------------------------------------
+
+export interface OfferFieldRecommendation {
+  recommendation: string;
+  why: string;
+  evidence: string;
+  confidence: string;
+}
+
+export type OfferPrefillKey =
+  | "targetCustomer"
+  | "problem"
+  | "desiredOutcome"
+  | "service"
+  | "deliverables"
+  | "timeline"
+  | "pricingHypothesis"
+  | "proof"
+  | "positioning";
+
+export const OFFER_PREFILL_LABELS: Record<OfferPrefillKey, string> = {
+  targetCustomer: "Target customer",
+  problem: "Problem",
+  desiredOutcome: "Desired outcome",
+  service: "Service",
+  deliverables: "Deliverables",
+  timeline: "Timeline",
+  pricingHypothesis: "Pricing hypothesis",
+  proof: "Proof",
+  positioning: "Positioning",
+};
+
+export interface OfferDocument {
+  offerName: string;
+  oneLinePromise: string;
+  whoItIsFor: string;
+  problem: string;
+  outcome: string;
+  whatYouDo: string;
+  whatTheyReceive: string;
+  timeline: string;
+  price: string;
+  whyYou: string;
+  whatMakesThisDifferent: string;
+  whatIsNotIncluded: string;
+  callToAction: string;
+}
+
+export interface Offer {
+  prefill: Record<OfferPrefillKey, OfferFieldRecommendation>;
+  document: OfferDocument;
+  userEdits: Partial<OfferDocument>;
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 10 — Offer Critic → Review
+// ---------------------------------------------------------------------------
+
+export interface OfferCritique {
+  criticalProblems: string[];
+  importantImprovements: string[];
+  optionalImprovements: string[];
+  whatToKeep: string[];
+  revisedOffer: OfferDocument;
+  materialChanges: string[];
+  healthScore: number;
+  readyForMarketTest: boolean;
+  biggestRemainingRisk: string;
+  nextBestAction: string;
+  generatedAt: string;
+  approved: boolean;
+  decision?: "kept_original" | "adopted_revision";
+}
+
+// ---------------------------------------------------------------------------
 
 export type StageStatus = "locked" | "not_started" | "in_progress" | "completed";
 
@@ -227,4 +403,9 @@ export interface OpportunitySession {
   autopsy?: Autopsy;
   capabilities?: CapabilitiesArtifact;
   market?: MarketArtifact;
+  opportunities?: OpportunitiesArtifact;
+  direction?: DirectionArtifact;
+  actionPlan?: ActionPlanArtifact;
+  offer?: Offer;
+  review?: OfferCritique;
 }

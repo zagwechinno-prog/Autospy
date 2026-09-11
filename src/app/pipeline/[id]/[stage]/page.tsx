@@ -10,9 +10,25 @@ import { ProfileStage } from "@/components/ProfileStage";
 import { AutopsyStage } from "@/components/AutopsyStage";
 import { CapabilitiesStage } from "@/components/CapabilitiesStage";
 import { MarketStage } from "@/components/MarketStage";
+import { OpportunitiesStage } from "@/components/OpportunitiesStage";
+import { DirectionStage } from "@/components/DirectionStage";
+import { ActionPlanStage } from "@/components/ActionPlanStage";
+import { OfferStage } from "@/components/OfferStage";
+import { ReviewStage } from "@/components/ReviewStage";
 import { StageStub } from "@/components/StageStub";
 
-const IMPLEMENTED_STAGES = ["experience", "profile", "autopsy", "capabilities", "market"];
+const IMPLEMENTED_STAGES = [
+  "experience",
+  "profile",
+  "autopsy",
+  "capabilities",
+  "market",
+  "opportunities",
+  "direction",
+  "action_plan",
+  "offer",
+  "review",
+];
 
 const VALID_STAGE_KEYS = new Set(STAGES.map((s) => s.key));
 
@@ -96,6 +112,21 @@ export default function StagePage({
       )}
       {stageKey === "market" && (
         <MarketStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "opportunities" && (
+        <OpportunitiesStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "direction" && (
+        <DirectionStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "action_plan" && (
+        <ActionPlanStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "offer" && (
+        <OfferStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "review" && (
+        <ReviewStage sessionId={id} session={session} onUpdate={setSession} />
       )}
       {!IMPLEMENTED_STAGES.includes(stageKey) && <StageStub stage={meta} />}
     </main>
