@@ -5,7 +5,7 @@
 Autospy is the core engine of an AI-powered Opportunity System. It doesn't analyze a resume
 for its own sake — it exists to turn someone's real, existing experience into a credible,
 specific, marketable opportunity, then move that opportunity from idea to offer to market
-validation.
+validation, and keep improving it against real market response.
 
 The system follows one fixed progression:
 
@@ -14,15 +14,19 @@ EXPERIENCE → PROFILE → AUTOPSY → CAPABILITIES → MARKET → OPPORTUNITIES
 → ACTION PLAN → OFFER → REVIEW → ONE-PAGER → PROSPECTS → OUTREACH → RESPONSE → OPTIMIZATION
 ```
 
+...wrapped in a sixteenth, non-linear role — the **Continuous Opportunity Loop** — that
+maintains a living snapshot of the whole thing rather than being a stage you complete once.
+
 The AI does the analysis, synthesis, research, drafting, and comparison. The human makes the
 consequential decisions — approve, edit, or reject — at every stage. Nothing is fabricated:
 every array is empty rather than padded, every URL is a real one the model actually found or
-absent, and every capability is tagged by how solid its evidence is.
+absent, every capability is tagged by how solid its evidence is, and pricing is a hypothesis
+until the market says otherwise.
 
 ## What's live right now
 
-Stages 1–5 are fully implemented end to end, each one a direct implementation of its own
-engine spec:
+All 15 pipeline stages plus the Loop are fully implemented end to end, each one a direct
+implementation of its own engine spec:
 
 1. **Experience** — capture what you've actually done, in your own words plus optional
    structured roles and achievements.
@@ -70,40 +74,64 @@ engine spec:
     silently applied — adopting the revision vs. keeping the original is a human decision.
     Ends with a health score, a ready-for-market-test verdict, the biggest remaining risk, and
     the next best action.
+11. **One-Pager** — the **Offer Asset Architect** packages the approved offer into a
+    buyer-oriented one-page sales asset — not a resume, not a biography. Concrete language,
+    a banned-word list (transform, elevate, unlock, leverage, cutting-edge, revolutionary,
+    game-changing), and no invented clients, testimonials, results, or statistics.
+12. **Prospects** — the **Prospect Research Engine** defines the Ideal Customer Profile, then
+    researches real companies with live web search, prioritized by problem likelihood and fit
+    rather than size. No fabricated decision-maker names or contacts; every prospect is
+    labeled `VERIFIED` (a real, citable source) or `INFERRED` (plausible, not confirmed).
+13. **Outreach** — the **Outreach Strategist** drafts prospect-specific sequences (email,
+    LinkedIn, two follow-ups, discovery-call opener) built on observation → problem hypothesis
+    → relevant insight → low-friction next step. The first touch doesn't hard-pitch.
+    Assumptions are labeled; nothing about the prospect is invented.
+14. **Response** — you log what actually happened when you sent that outreach (real prospect,
+    real response), then the **Market Feedback Analyst** classifies each entry into one of 13
+    categories and a root cause (target/problem/positioning/offer/proof/price/timing/outreach/
+    insufficient data), and looks for patterns across entries rather than reacting to one.
+15. **Optimization** — the **Offer Optimization Engine** decides, from repeated evidence, one
+    of KEEP/REFINE/REPOSITION/NARROW/EXPAND/REPRICE/RETARGET/REJECT, explains each recommended
+    change (what/why/evidence/expected effect/risk/confidence), and drafts Version 2. Adopting
+    it vs. keeping the current offer is a human decision, same pattern as the Review stage.
 
-Stages 11–15 (One-Pager through Optimization) are scaffolded in the pipeline UI with their
-purpose and expected output described, but not yet wired to the AI engine. They follow the
-same artifact-in → AI draft → human review → artifact-out pattern as the first ten.
+**The Loop** — a non-gated, always-regenerable view (`/pipeline/[id]/loop`, linked from every
+stage page) implementing the **Opportunity Operating System** role: a living snapshot of what's
+known, inferred, tested, worked, failed, remains uncertain, and changed, plus the single
+highest-value next action. It reads whatever state exists — partial pipelines included — rather
+than requiring the full 15 stages to be complete.
 
 ## Architecture
 
 - **Next.js (App Router) + TypeScript + Tailwind** — single deployable app.
 - **`src/lib/pipeline.ts`** — the 15-stage definition (order, description, what it produces,
   whether it's implemented). This is the source of truth the stepper UI and routing key off.
-- **`src/lib/types.ts`** — the `OpportunitySession` data model: Experience intake, `ProfileRaw`,
-  Profile, Autopsy, Capabilities, Market, Opportunities, Direction, Action Plan, Offer, Review —
-  evidence tags and review status throughout. Every stage reads/writes this shared structure so
-  context persists — nothing already known is asked for twice.
+  The Loop is deliberately not in this list — it's a cross-cutting view, not a stage.
+- **`src/lib/types.ts`** — the `OpportunitySession` data model covering every stage's artifact,
+  evidence tags, and review status throughout. Every stage reads/writes this shared structure
+  so context persists — nothing already known is asked for twice.
 - **`src/lib/store.ts`** — a simple file-based session store (`.data/sessions/<id>.json`).
   Good enough for single-user local/dev use; swap for a real database if this needs multiple
   concurrent users.
 - **`src/lib/anthropic.ts`** — `callStructured` forces the model to respond through a single
   tool call matching a JSON schema, so every stage gets typed structured output instead of
   free text to parse.
-- **`src/lib/prompts/`** — one module per engine (`profile.ts`, `autopsy.ts`,
-  `capabilities.ts`, `market.ts`, `opportunities.ts`, `direction.ts`, `action-plan.ts`,
-  `offer.ts`, `review.ts`), each a direct implementation of its own system-role spec.
-  `market.ts` is the one two-phase-but-different case: a free-form research call with the
-  `web_search` server tool, then a `callStructured` pass to extract the structured reads.
-  `direction.ts` is the one stage where the actual selection is deliberately not an AI call —
-  only the priority-based guidance is generated; the pick is a human action.
-- **`src/app/api/session/...`** — REST-ish routes: create a session, submit Experience,
-  generate/review each of Profile, Autopsy, Capabilities, Market, Opportunities, Action Plan,
-  and Review; Direction has `generate` + `select`; Offer has `generate` + `review` (which both
-  saves edits and can approve).
-- **`src/app/pipeline/[id]/[stage]/page.tsx`** — the single pipeline shell: stepper nav across
-  all 15 stages, stage-specific content component, locked stages until their predecessor is
-  approved.
+- **`src/lib/prompts/`** — one module per engine, each a direct implementation of its own
+  system-role spec. Two stages depart from the single-`callStructured`-call pattern:
+  - `market.ts` and `prospects.ts` do real research: a free-form call with the `web_search`
+    server tool, then a `callStructured` pass to extract structured, sourced results.
+  - `direction.ts` deliberately has no AI call for the actual decision — only the
+    priority-based guidance is generated; picking one is a human action.
+- **`src/app/api/session/...`** — REST-ish routes, one folder per stage. Most follow
+  generate (`POST .../<stage>`) + review (`POST .../<stage>/review`); a few have a different
+  shape where the spec calls for it: Direction (`generate` + `select`), Response (`log` +
+  `analyze` + `review`, since it needs real human-reported outcomes before AI can classify
+  anything), Optimization (`generate` + `decision`), and the standalone `loop` route (no
+  stage gating, callable anytime `experience` exists).
+- **`src/app/pipeline/[id]/[stage]/page.tsx`** — the pipeline shell: stepper nav across all 15
+  stages, stage-specific content component, locked stages until their predecessor is approved.
+- **`src/app/pipeline/[id]/loop/page.tsx`** — the standalone Loop view, outside the stage
+  stepper since it isn't part of the linear StageKey union.
 
 ## Running it
 
@@ -113,20 +141,22 @@ cp .env.example .env.local   # add your ANTHROPIC_API_KEY
 npm run dev
 ```
 
-Open http://localhost:3000, click through to Experience, and stages 2–10 will call the
-Anthropic API once `ANTHROPIC_API_KEY` is set. Without a key, Experience intake still works;
-AI generation returns a clear error until a key is configured. The Market stage additionally
-requires your API key to have web search enabled.
+Open http://localhost:3000, click through to Experience, and every AI-powered stage will call
+the Anthropic API once `ANTHROPIC_API_KEY` is set. Without a key, Experience intake and the
+Response log still work (they're human data entry); AI generation returns a clear error until
+a key is configured. Market and Prospects additionally require your API key to have web search
+enabled.
 
-## Extending a new stage
+## Extending or modifying a stage
 
-Each of the remaining 5 stages follows the same shape as Profile/Autopsy/Capabilities:
+Every stage follows the same shape:
 
-1. Add fields to `OpportunitySession` in `src/lib/types.ts` for the stage's artifact.
-2. Write a prompt module in `src/lib/prompts/<stage>.ts` using `callStructured` (or the
-   `market.ts` two-call pattern if the stage needs live research).
-3. Add `POST /api/session/[id]/<stage>/route.ts` (generate) and `.../review/route.ts` (human
-   approve/edit/reject), following `capabilities`/`market` as templates.
-4. Add a `<Stage>Stage.tsx` component (reuse `DecisionButton`) and wire it into
+1. Its artifact type lives in `src/lib/types.ts` on `OpportunitySession`.
+2. Its prompt module lives in `src/lib/prompts/<stage>.ts`, built on `callStructured` (or the
+   `market.ts`/`prospects.ts` two-call research pattern for stages that need live search).
+3. Its routes live in `src/app/api/session/[id]/<stage>/`, gated on the previous stage's
+   `approved` flag and calling `unlockStage` on the next when this one completes.
+4. Its UI component lives in `src/components/<Stage>Stage.tsx` (reuse `DecisionButton` for the
+   approve/edit/reject pattern) and is wired into
    `src/app/pipeline/[id]/[stage]/page.tsx`.
-5. Flip `implemented: true` for that stage in `src/lib/pipeline.ts`.
+5. `implemented: true` in `src/lib/pipeline.ts` once wired up.

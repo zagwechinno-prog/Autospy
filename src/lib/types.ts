@@ -389,6 +389,243 @@ export interface OfferCritique {
 }
 
 // ---------------------------------------------------------------------------
+// PROMPT 11 — Offer Asset Architect → One-Pager
+// ---------------------------------------------------------------------------
+
+export interface OnePagerDocument {
+  offerName: string;
+  whoThisIsFor: string;
+  theProblem: string;
+  theOutcome: string;
+  whatWeDo: string;
+  whatYouGet: string;
+  howItWorks: string;
+  timeline: string;
+  whyTrustUs: string;
+  pricingModel: string;
+  callToAction: string;
+}
+
+export interface OnePager {
+  document: OnePagerDocument;
+  userEdits: Partial<OnePagerDocument>;
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 12 — Prospect Research Engine → Prospects
+// ---------------------------------------------------------------------------
+
+export interface IdealCustomerProfile {
+  industry: string;
+  companySize: string;
+  geography: string;
+  businessModel: string;
+  likelyBuyer: string;
+  likelyProblem: string;
+  triggerEvents: string[];
+  disqualifiers: string[];
+}
+
+export type ProspectVerification = "VERIFIED" | "INFERRED";
+
+export interface Prospect {
+  id: string;
+  company: string;
+  website: string;
+  industry: string;
+  size: string;
+  likelyBuyer: string;
+  whyTheyFit: string;
+  relevantTrigger: string;
+  likelyProblem: string;
+  personalizationAngle: string;
+  confidence: string;
+  source: string;
+  verification: ProspectVerification;
+  reviewStatus: ReviewStatus;
+  userEdit?: string;
+}
+
+export interface ProspectsArtifact {
+  icp: IdealCustomerProfile;
+  prospects: Prospect[];
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 13 — Outreach Strategist → Outreach
+// ---------------------------------------------------------------------------
+
+export type OutreachMessageType = "email" | "linkedin" | "follow_up_1" | "follow_up_2" | "discovery_call_opener";
+
+export const OUTREACH_MESSAGE_LABELS: Record<OutreachMessageType, string> = {
+  email: "Email",
+  linkedin: "LinkedIn message",
+  follow_up_1: "Follow-up 1",
+  follow_up_2: "Follow-up 2",
+  discovery_call_opener: "Discovery-call opener",
+};
+
+export interface OutreachMessage {
+  type: OutreachMessageType;
+  content: string;
+}
+
+export interface ProspectOutreach {
+  prospectId: string;
+  prospectName: string;
+  observation: string;
+  problemHypothesis: string;
+  relevantInsight: string;
+  assumptionsLabeled: string[];
+  messages: OutreachMessage[];
+}
+
+export interface OutreachArtifact {
+  prospectOutreach: ProspectOutreach[];
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 14 — Market Feedback Analyst → Response
+// ---------------------------------------------------------------------------
+
+export const RESPONSE_CATEGORIES = [
+  "positive_interest",
+  "curiosity",
+  "objection",
+  "timing_issue",
+  "wrong_person",
+  "wrong_problem",
+  "wrong_offer",
+  "price_concern",
+  "credibility_concern",
+  "no_response",
+  "meeting_booked",
+  "rejected",
+  "converted",
+] as const;
+export type ResponseCategory = (typeof RESPONSE_CATEGORIES)[number];
+
+export const RESPONSE_CATEGORY_LABELS: Record<ResponseCategory, string> = {
+  positive_interest: "Positive interest",
+  curiosity: "Curiosity",
+  objection: "Objection",
+  timing_issue: "Timing issue",
+  wrong_person: "Wrong person",
+  wrong_problem: "Wrong problem",
+  wrong_offer: "Wrong offer",
+  price_concern: "Price concern",
+  credibility_concern: "Credibility concern",
+  no_response: "No response",
+  meeting_booked: "Meeting booked",
+  rejected: "Rejected",
+  converted: "Converted",
+};
+
+export const ROOT_CAUSES = [
+  "TARGET",
+  "PROBLEM",
+  "POSITIONING",
+  "OFFER",
+  "PROOF",
+  "PRICE",
+  "TIMING",
+  "OUTREACH",
+  "INSUFFICIENT_DATA",
+] as const;
+export type RootCause = (typeof ROOT_CAUSES)[number];
+
+export interface ResponseLogEntry {
+  id: string;
+  prospectLabel: string;
+  date: string;
+  channel: string;
+  messageSummary: string;
+  responseText: string;
+  category?: ResponseCategory;
+  rootCause?: RootCause;
+  notes?: string;
+}
+
+export interface ResponseAnalysis {
+  entries: ResponseLogEntry[];
+  feedbackSummary: string;
+  patterns: string[];
+  buyerLanguage: string[];
+  objections: string[];
+  signalsOfDemand: string[];
+  signalsOfWeakDemand: string[];
+  recommendedChanges: string[];
+  confidence: string;
+  generatedAt: string;
+  approved: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 15 — Offer Optimization Engine → Optimization
+// ---------------------------------------------------------------------------
+
+export const OPTIMIZATION_DECISIONS = [
+  "KEEP",
+  "REFINE",
+  "REPOSITION",
+  "NARROW",
+  "EXPAND",
+  "REPRICE",
+  "RETARGET",
+  "REJECT",
+] as const;
+export type OptimizationDecision = (typeof OPTIMIZATION_DECISIONS)[number];
+
+export interface OptimizationChange {
+  variable: string;
+  whatChanges: string;
+  why: string;
+  evidence: string;
+  expectedEffect: string;
+  risk: string;
+  confidence: string;
+}
+
+export interface OptimizationArtifact {
+  decision: OptimizationDecision;
+  decisionRationale: string;
+  changes: OptimizationChange[];
+  beforeOffer: OfferDocument;
+  afterOffer: OfferDocument;
+  userObservations: string;
+  generatedAt: string;
+  approved: boolean;
+  adopted?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// PROMPT 16 — Continuous Opportunity Loop (meta view, not a gated StageKey)
+// ---------------------------------------------------------------------------
+
+export interface LoopSnapshot {
+  whatWeKnow: string[];
+  whatWeInferred: string[];
+  whatWeTested: string[];
+  whatWorked: string[];
+  whatFailed: string[];
+  whatRemainsUncertain: string[];
+  whatChanged: string[];
+  whatShouldHappenNext: string[];
+  learnedThisIteration: string;
+  evidenceForChange: string;
+  whatShouldRemainUnchanged: string;
+  whatToTestNext: string;
+  highestValueNextAction: string;
+  generatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
 
 export type StageStatus = "locked" | "not_started" | "in_progress" | "completed";
 
@@ -408,4 +645,10 @@ export interface OpportunitySession {
   actionPlan?: ActionPlanArtifact;
   offer?: Offer;
   review?: OfferCritique;
+  onePager?: OnePager;
+  prospects?: ProspectsArtifact;
+  outreach?: OutreachArtifact;
+  response?: ResponseAnalysis;
+  optimization?: OptimizationArtifact;
+  loop?: LoopSnapshot;
 }

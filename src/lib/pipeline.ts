@@ -133,36 +133,40 @@ export const STAGES: StageMeta[] = [
     order: 11,
     label: "One-Pager",
     shortLabel: "One-Pager",
-    description: "Package the approved Offer into a one-page artifact a buyer can read in under a minute.",
-    produces: "A One-Pager document.",
-    implemented: false,
+    description:
+      "Package the approved Offer into a buyer-oriented one-page sales asset — not a resume, not a biography. Concrete language, no invented clients, testimonials, results, or stats.",
+    produces: "A One-Pager document, editable and ready to send.",
+    implemented: true,
   },
   {
     key: "prospects",
     order: 12,
     label: "Prospects",
     shortLabel: "Prospects",
-    description: "Identify and qualify specific candidate buyers for the Offer.",
-    produces: "A qualified Prospect List.",
-    implemented: false,
+    description:
+      "Define the Ideal Customer Profile, then research real candidate buyers with live web search — prioritized by problem likelihood and fit, never by company size alone. No fabricated decision-maker names or contacts; every prospect labeled VERIFIED or INFERRED.",
+    produces: "A qualified, sourced Prospect List.",
+    implemented: true,
   },
   {
     key: "outreach",
     order: 13,
     label: "Outreach",
     shortLabel: "Outreach",
-    description: "Draft outreach sequences tailored to each prospect's specific situation and problem.",
+    description:
+      "Draft prospect-specific outreach (email, LinkedIn, two follow-ups, discovery-call opener) built on observation → problem hypothesis → insight → low-friction next step. First touch doesn't hard-pitch. Assumptions labeled, nothing about the prospect invented.",
     produces: "Outreach drafts, ready for human send.",
-    implemented: false,
+    implemented: true,
   },
   {
     key: "response",
     order: 14,
     label: "Response",
     shortLabel: "Response",
-    description: "Analyze real market responses — what worked, what didn't, what objections appeared.",
-    produces: "A Response Analysis.",
-    implemented: false,
+    description:
+      "Log what actually happened when you reached out, then classify each response and find the pattern — whether the real issue is target, problem, positioning, offer, proof, price, timing, or outreach itself.",
+    produces: "A Response Analysis grounded in your logged outcomes.",
+    implemented: true,
   },
   {
     key: "optimization",
@@ -170,9 +174,9 @@ export const STAGES: StageMeta[] = [
     label: "Optimization",
     shortLabel: "Optimization",
     description:
-      "Feed response evidence back into the Offer, Direction, or even the Profile — close the loop from market reality to system.",
-    produces: "Updated, evidence-backed recommendations for the next cycle.",
-    implemented: false,
+      "Decide, from repeated evidence rather than one response, whether the offer should be kept, refined, repositioned, narrowed, expanded, repriced, retargeted, or rejected — then produce Version 2.",
+    produces: "A before/after offer comparison with an explicit decision and rationale.",
+    implemented: true,
   },
 ];
 

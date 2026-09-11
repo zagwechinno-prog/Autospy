@@ -15,6 +15,11 @@ import { DirectionStage } from "@/components/DirectionStage";
 import { ActionPlanStage } from "@/components/ActionPlanStage";
 import { OfferStage } from "@/components/OfferStage";
 import { ReviewStage } from "@/components/ReviewStage";
+import { OnePagerStage } from "@/components/OnePagerStage";
+import { ProspectsStage } from "@/components/ProspectsStage";
+import { OutreachStage } from "@/components/OutreachStage";
+import { ResponseStage } from "@/components/ResponseStage";
+import { OptimizationStage } from "@/components/OptimizationStage";
 import { StageStub } from "@/components/StageStub";
 
 const IMPLEMENTED_STAGES = [
@@ -28,6 +33,11 @@ const IMPLEMENTED_STAGES = [
   "action_plan",
   "offer",
   "review",
+  "one_pager",
+  "prospects",
+  "outreach",
+  "response",
+  "optimization",
 ];
 
 const VALID_STAGE_KEYS = new Set(STAGES.map((s) => s.key));
@@ -89,7 +99,15 @@ export default function StagePage({
       <Link href="/" className="text-sm font-semibold tracking-tight text-zinc-900 dark:text-zinc-100">
         Autospy
       </Link>
-      <Stepper sessionId={id} currentStage={stageKey} stageStatus={session.stageStatus} />
+      <div className="flex items-start justify-between gap-4">
+        <Stepper sessionId={id} currentStage={stageKey} stageStatus={session.stageStatus} />
+        <Link
+          href={`/pipeline/${id}/loop`}
+          className="shrink-0 whitespace-nowrap text-xs font-medium text-zinc-500 underline underline-offset-2 hover:text-zinc-900 dark:text-zinc-500 dark:hover:text-zinc-100"
+        >
+          Opportunity Loop →
+        </Link>
+      </div>
 
       <header className="flex flex-col gap-1">
         <p className="text-xs font-medium uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
@@ -127,6 +145,21 @@ export default function StagePage({
       )}
       {stageKey === "review" && (
         <ReviewStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "one_pager" && (
+        <OnePagerStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "prospects" && (
+        <ProspectsStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "outreach" && (
+        <OutreachStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "response" && (
+        <ResponseStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "optimization" && (
+        <OptimizationStage sessionId={id} session={session} onUpdate={setSession} />
       )}
       {!IMPLEMENTED_STAGES.includes(stageKey) && <StageStub stage={meta} />}
     </main>
