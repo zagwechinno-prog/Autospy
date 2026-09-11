@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { getSession, saveSession } from "@/lib/store";
-import { synthesizeProfile } from "@/lib/prompts/profile";
+import { researchMarket } from "@/lib/prompts/market";
 
 export async function POST(
   _req: Request,
@@ -11,22 +11,20 @@ export async function POST(
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
-  if (!session.experience) {
+  if (!session.capabilities?.approved) {
     return NextResponse.json(
-      { error: "Complete the Experience stage first." },
+      { error: "Approve the Capabilities stage first." },
       { status: 400 }
     );
   }
 
   try {
-    const { profileRaw, profile } = await synthesizeProfile(session.experience);
-    session.profileRaw = profileRaw;
-    session.profile = profile;
-    session.stageStatus.profile = "in_progress";
+    session.market = await researchMarket(session.capabilities.capabilities);
+    session.stageStatus.market = "in_progress";
     await saveSession(session);
     return NextResponse.json(session);
   } catch (err) {
-    const message = err instanceof Error ? err.message : "Failed to generate profile.";
+    const message = err instanceof Error ? err.message : "Failed to research the market.";
     return NextResponse.json({ error: message }, { status: 502 });
   }
 }

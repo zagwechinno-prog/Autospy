@@ -8,7 +8,11 @@ import { Stepper } from "@/components/Stepper";
 import { ExperienceForm } from "@/components/ExperienceForm";
 import { ProfileStage } from "@/components/ProfileStage";
 import { AutopsyStage } from "@/components/AutopsyStage";
+import { CapabilitiesStage } from "@/components/CapabilitiesStage";
+import { MarketStage } from "@/components/MarketStage";
 import { StageStub } from "@/components/StageStub";
+
+const IMPLEMENTED_STAGES = ["experience", "profile", "autopsy", "capabilities", "market"];
 
 const VALID_STAGE_KEYS = new Set(STAGES.map((s) => s.key));
 
@@ -87,7 +91,13 @@ export default function StagePage({
       {stageKey === "autopsy" && (
         <AutopsyStage sessionId={id} session={session} onUpdate={setSession} />
       )}
-      {!["experience", "profile", "autopsy"].includes(stageKey) && <StageStub stage={meta} />}
+      {stageKey === "capabilities" && (
+        <CapabilitiesStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {stageKey === "market" && (
+        <MarketStage sessionId={id} session={session} onUpdate={setSession} />
+      )}
+      {!IMPLEMENTED_STAGES.includes(stageKey) && <StageStub stage={meta} />}
     </main>
   );
 }

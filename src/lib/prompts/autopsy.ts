@@ -1,85 +1,115 @@
 import { randomUUID } from "crypto";
 import { callStructured } from "../anthropic";
-import { CORE_RULES } from "./shared";
-import type { Autopsy, ExperienceIntake, Profile } from "../types";
-import { EVIDENCE_TAGS } from "../types";
+import type { Autopsy, AutopsyCategory, ExperienceIntake } from "../types";
 
-const SYSTEM_PROMPT = `${CORE_RULES}
+const SYSTEM_PROMPT = `SYSTEM ROLE
+You are the Resume Autopsy Engine.
+Your purpose is to identify what the resume reveals, hides, weakens, or fails to communicate.
+Do not behave like an ATS checker. Analyze the resume as evidence of economic capability.
 
-STAGE: AUTOPSY
+Evaluate:
+1. Evidence density
+2. Specificity
+3. Measurable outcomes
+4. Problem-solving evidence
+5. Commercial value
+6. Operational value
+7. Transferability
+8. Differentiation
+9. Credibility
+10. Missing evidence
+11. Generic language
+12. Underused experience
+13. Hidden capabilities
+14. Possible positioning weaknesses
 
-Input: the original Experience Intake, plus an already human-approved Opportunity Profile
-(capability statements the user has confirmed or edited — treat these as ground truth about
-how the user wants to be described).
+Identify: strongest evidence, weakest evidence, hidden value, repeated patterns, unexplained
+gaps, generic descriptions, capabilities the user may be under-positioning.
 
-Task: perform an autopsy on the experience — cut past job titles and activities to what is
-actually underneath them. For each of 4-8 of the most significant roles/projects/activities
-in the input, produce a finding with:
-- stated_role: the job title or activity as the user described it.
-- real_capability: what that role actually made the person capable of doing for a buyer,
-  independent of the title (CAPABILITY OVER JOB TITLE).
-- problem_solved: the concrete problem this capability solves for someone, stated as their
-  problem, not the user's task (PROBLEM OVER SKILL).
-- outcome_delivered: what changed for the buyer/organization as a result (OUTCOME OVER
-  ACTIVITY). If the input does not state a measurable outcome, describe the qualitative
-  change and tag accordingly rather than inventing a number.
-- evidence_tag and evidence_quote per the rules above.
+Do not rewrite the resume unless specifically requested. The goal is discovery, not document
+editing. Every finding must be a specific, evidence-grounded statement about THIS resume — not
+generic resume-writing advice.
 
-Also produce:
-- pattern_summary: 2-4 sentences naming the recurring pattern underneath these findings — the
-  underlying operating instinct connecting them (e.g. repeatedly finding the system inside a
-  fragmented process, repeatedly turning informal judgment into explicit structure). Ground
-  this in the findings themselves, do not introduce new claims.
-- economic_capability_summary: 2-3 sentences stating, in plain commercial language, what this
-  person can credibly be paid to do right now — not their job title, their capability.
+OUTPUT
+Populate strengths, weaknesses, hidden_value, under_positioned_capabilities, generic_claims,
+missing_evidence, high_value_evidence, patterns, risks, and opportunity_clues. Then identify
+the 3 strongest discoveries — the most valuable, most evidence-grounded findings across all
+categories, written so a person could immediately see why each one matters. Respond only
+through the provided tool call. Use an empty array for any category with nothing to report —
+never invent a finding to avoid an empty array.`;
 
-Do not invent roles, employers, achievements, or metrics beyond what is given.`;
-
-const INPUT_SCHEMA = {
+const AUTOPSY_SCHEMA = {
   type: "object" as const,
   properties: {
-    findings: {
+    strengths: { type: "array", items: { type: "string" } },
+    weaknesses: { type: "array", items: { type: "string" } },
+    hidden_value: { type: "array", items: { type: "string" } },
+    under_positioned_capabilities: { type: "array", items: { type: "string" } },
+    generic_claims: { type: "array", items: { type: "string" } },
+    missing_evidence: { type: "array", items: { type: "string" } },
+    high_value_evidence: { type: "array", items: { type: "string" } },
+    patterns: { type: "array", items: { type: "string" } },
+    risks: { type: "array", items: { type: "string" } },
+    opportunity_clues: { type: "array", items: { type: "string" } },
+    strongest_discoveries: {
       type: "array",
-      items: {
-        type: "object",
-        properties: {
-          stated_role: { type: "string" },
-          real_capability: { type: "string" },
-          problem_solved: { type: "string" },
-          outcome_delivered: { type: "string" },
-          evidence_tag: { type: "string", enum: EVIDENCE_TAGS as unknown as string[] },
-          evidence_quote: { type: "string" },
-        },
-        required: [
-          "stated_role",
-          "real_capability",
-          "problem_solved",
-          "outcome_delivered",
-          "evidence_tag",
-          "evidence_quote",
-        ],
-      },
+      items: { type: "string" },
+      minItems: 3,
+      maxItems: 3,
+      description: "Exactly 3 of the strongest discoveries above, drawn verbatim or near-verbatim from the categorized findings.",
     },
-    pattern_summary: { type: "string" },
-    economic_capability_summary: { type: "string" },
   },
-  required: ["findings", "pattern_summary", "economic_capability_summary"],
+  required: [
+    "strengths",
+    "weaknesses",
+    "hidden_value",
+    "under_positioned_capabilities",
+    "generic_claims",
+    "missing_evidence",
+    "high_value_evidence",
+    "patterns",
+    "risks",
+    "opportunity_clues",
+    "strongest_discoveries",
+  ],
 };
 
 interface AutopsyToolOutput {
-  findings: {
-    stated_role: string;
-    real_capability: string;
-    problem_solved: string;
-    outcome_delivered: string;
-    evidence_tag: Autopsy["findings"][number]["evidenceTag"];
-    evidence_quote: string;
-  }[];
-  pattern_summary: string;
-  economic_capability_summary: string;
+  strengths: string[];
+  weaknesses: string[];
+  hidden_value: string[];
+  under_positioned_capabilities: string[];
+  generic_claims: string[];
+  missing_evidence: string[];
+  high_value_evidence: string[];
+  patterns: string[];
+  risks: string[];
+  opportunity_clues: string[];
+  strongest_discoveries: string[];
 }
 
-function buildUserMessage(experience: ExperienceIntake, profile: Profile): string {
+const CATEGORY_ORDER: { key: keyof Omit<AutopsyToolOutput, "strongest_discoveries">; category: AutopsyCategory }[] = [
+  { key: "strengths", category: "strength" },
+  { key: "weaknesses", category: "weakness" },
+  { key: "hidden_value", category: "hidden_value" },
+  { key: "under_positioned_capabilities", category: "under_positioned" },
+  { key: "generic_claims", category: "generic_claim" },
+  { key: "missing_evidence", category: "missing_evidence" },
+  { key: "high_value_evidence", category: "high_value_evidence" },
+  { key: "patterns", category: "pattern" },
+  { key: "risks", category: "risk" },
+  { key: "opportunity_clues", category: "opportunity_clue" },
+];
+
+/** Categories that indicate untapped upside rather than just description. */
+const HIGH_POTENTIAL_KEYS: (keyof AutopsyToolOutput)[] = [
+  "hidden_value",
+  "under_positioned_capabilities",
+  "opportunity_clues",
+  "high_value_evidence",
+];
+
+function buildSourceMaterialMessage(experience: ExperienceIntake): string {
   const parts: string[] = [];
   if (experience.rawNarrative.trim()) {
     parts.push(`NARRATIVE:\n${experience.rawNarrative.trim()}`);
@@ -98,43 +128,40 @@ function buildUserMessage(experience: ExperienceIntake, profile: Profile): strin
   if (experience.achievements.length > 0) {
     parts.push(`ACHIEVEMENTS:\n${experience.achievements.map((a) => `- ${a}`).join("\n")}`);
   }
-
-  const effectiveCapabilities = profile.capabilities
-    .filter((c) => c.reviewStatus !== "rejected")
-    .map((c) => `- [${c.evidenceTag}] ${c.userEdit ?? c.statement} (evidence: ${c.evidenceQuote})`);
-
-  parts.push(`APPROVED PROFILE — IDENTITY SUMMARY:\n${profile.identitySummary}`);
-  parts.push(`APPROVED PROFILE — CAPABILITIES:\n${effectiveCapabilities.join("\n")}`);
-
+  if (experience.notes?.trim()) {
+    parts.push(`ADDITIONAL CONTEXT:\n${experience.notes.trim()}`);
+  }
   return parts.join("\n\n");
 }
 
-export async function synthesizeAutopsy(
-  experience: ExperienceIntake,
-  profile: Profile
-): Promise<Autopsy> {
+export async function synthesizeAutopsy(experience: ExperienceIntake): Promise<Autopsy> {
   const output = await callStructured<AutopsyToolOutput>({
     system: SYSTEM_PROMPT,
-    userMessage: buildUserMessage(experience, profile),
+    userMessage: buildSourceMaterialMessage(experience),
     toolName: "emit_autopsy",
-    toolDescription: "Emit the structured Autopsy findings synthesized from the experience and approved profile.",
-    inputSchema: INPUT_SCHEMA,
+    toolDescription: "Emit the structured resume autopsy findings.",
+    inputSchema: AUTOPSY_SCHEMA,
     maxTokens: 4096,
   });
 
-  return {
-    patternSummary: output.pattern_summary,
-    economicCapabilitySummary: output.economic_capability_summary,
-    findings: output.findings.map((f) => ({
+  const findings = CATEGORY_ORDER.flatMap(({ key, category }) =>
+    output[key].map((text) => ({
       id: randomUUID(),
-      statedRole: f.stated_role,
-      realCapability: f.real_capability,
-      problemSolved: f.problem_solved,
-      outcomeDelivered: f.outcome_delivered,
-      evidenceTag: f.evidence_tag,
-      evidenceQuote: f.evidence_quote,
+      category,
+      text,
       reviewStatus: "pending" as const,
-    })),
+    }))
+  );
+
+  const capabilitiesIdentifiedCount = findings.length;
+  const highPotentialCount = HIGH_POTENTIAL_KEYS.reduce((sum, key) => sum + output[key].length, 0);
+
+  return {
+    headline: "We found more in your experience than your resume shows.",
+    capabilitiesIdentifiedCount,
+    highPotentialCount,
+    strongestDiscoveries: output.strongest_discoveries,
+    findings,
     generatedAt: new Date().toISOString(),
     approved: false,
   };

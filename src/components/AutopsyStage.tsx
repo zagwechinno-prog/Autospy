@@ -2,12 +2,38 @@
 
 import { useState } from "react";
 import type { OpportunitySession, ReviewStatus } from "@/lib/types";
-import { EvidenceBadge } from "./EvidenceBadge";
+import { AUTOPSY_CATEGORY_LABELS } from "@/lib/types";
+import { DecisionButton } from "./DecisionButton";
 
 type DecidedStatus = Exclude<ReviewStatus, "pending">;
 interface Decision {
   status: DecidedStatus;
   text: string;
+}
+
+const CATEGORY_STYLE: Record<string, string> = {
+  strength: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  high_value_evidence: "bg-emerald-50 text-emerald-700 dark:bg-emerald-950 dark:text-emerald-300",
+  hidden_value: "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  opportunity_clue: "bg-violet-50 text-violet-700 dark:bg-violet-950 dark:text-violet-300",
+  under_positioned: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  pattern: "bg-blue-50 text-blue-700 dark:bg-blue-950 dark:text-blue-300",
+  weakness: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  generic_claim: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  missing_evidence: "bg-amber-50 text-amber-700 dark:bg-amber-950 dark:text-amber-300",
+  risk: "bg-red-50 text-red-700 dark:bg-red-950 dark:text-red-300",
+};
+
+function CategoryBadge({ category }: { category: string }) {
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-full px-2 py-0.5 text-[11px] font-medium ${
+        CATEGORY_STYLE[category] ?? "bg-zinc-100 text-zinc-600 dark:bg-zinc-900 dark:text-zinc-400"
+      }`}
+    >
+      {AUTOPSY_CATEGORY_LABELS[category as keyof typeof AUTOPSY_CATEGORY_LABELS] ?? category}
+    </span>
+  );
 }
 
 export function AutopsyStage({
@@ -56,7 +82,7 @@ export function AutopsyStage({
     setError(null);
     try {
       const findings = autopsy.findings.map((f) => {
-        const d = decisionFor(f.id, f.realCapability);
+        const d = decisionFor(f.id, f.text);
         return {
           id: f.id,
           reviewStatus: d.status,
@@ -81,8 +107,7 @@ export function AutopsyStage({
   if (!profileApproved) {
     return (
       <p className="text-sm text-zinc-600 dark:text-zinc-400">
-        Approve the Profile stage first — Autopsy builds directly on the capabilities you confirmed
-        there.
+        Approve the Profile stage first.
       </p>
     );
   }
@@ -91,9 +116,10 @@ export function AutopsyStage({
     return (
       <div className="flex flex-col gap-4">
         <p className="text-sm text-zinc-600 dark:text-zinc-400">
-          Autopsy cuts past job titles to what they actually made you capable of doing for a buyer:
-          the real capability, the problem it solves, and the outcome it delivers — plus the
-          recurring pattern underneath all of it.
+          Autopsy analyzes your raw experience as evidence of economic capability — not as a
+          resume to be graded, but as proof to be read. It surfaces strengths, weaknesses,
+          hidden value, under-positioned capabilities, generic claims, missing evidence,
+          patterns, risks, and opportunity clues.
         </p>
         {error && <p className="text-sm text-red-600 dark:text-red-400">{error}</p>}
         <button
@@ -115,10 +141,16 @@ export function AutopsyStage({
           Autopsy approved — {active.length} finding{active.length === 1 ? "" : "s"} carried forward.
           Capabilities stage unlocked next.
         </div>
-        <PatternAndEconomics autopsy={autopsy} />
+        <Headline autopsy={autopsy} />
         <div className="flex flex-col gap-2">
           {active.map((f) => (
-            <FindingReadCard key={f.id} finding={f} />
+            <div
+              key={f.id}
+              className="flex items-start justify-between gap-3 rounded-lg border border-zinc-200 p-3 dark:border-zinc-800"
+            >
+              <p className="text-sm text-zinc-800 dark:text-zinc-200">{f.userEdit ?? f.text}</p>
+              <CategoryBadge category={f.category} />
+            </div>
           ))}
         </div>
       </div>
@@ -127,14 +159,14 @@ export function AutopsyStage({
 
   return (
     <div className="flex flex-col gap-6">
-      <PatternAndEconomics autopsy={autopsy} />
+      <Headline autopsy={autopsy} />
 
       <div className="flex flex-col gap-3">
         <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
           Findings — review each one
         </h3>
         {autopsy.findings.map((f) => {
-          const d = decisionFor(f.id, f.realCapability);
+          const d = decisionFor(f.id, f.text);
           return (
             <div
               key={f.id}
@@ -143,53 +175,37 @@ export function AutopsyStage({
               }`}
             >
               <div className="flex items-start justify-between gap-3">
-                <div className="flex-1 space-y-2">
-                  <p className="text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
-                    Stated as: {f.statedRole}
-                  </p>
+                <div className="flex-1">
                   {d.status === "edited" ? (
                     <textarea
                       value={d.text}
-                      onChange={(e) => setDecision(f.id, { text: e.target.value }, f.realCapability)}
+                      onChange={(e) => setDecision(f.id, { text: e.target.value }, f.text)}
                       rows={2}
                       className="w-full rounded border border-zinc-300 bg-white p-2 text-sm dark:border-zinc-700 dark:bg-zinc-950"
                     />
                   ) : (
-                    <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-                      {f.realCapability}
-                    </p>
+                    <p className="text-sm text-zinc-800 dark:text-zinc-200">{f.text}</p>
                   )}
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                    <span className="font-medium">Problem solved: </span>
-                    {f.problemSolved}
-                  </p>
-                  <p className="text-sm text-zinc-700 dark:text-zinc-300">
-                    <span className="font-medium">Outcome: </span>
-                    {f.outcomeDelivered}
-                  </p>
-                  <p className="text-xs italic text-zinc-500 dark:text-zinc-500">
-                    “{f.evidenceQuote}”
-                  </p>
                 </div>
-                <EvidenceBadge tag={f.evidenceTag} />
+                <CategoryBadge category={f.category} />
               </div>
               <div className="mt-3 flex gap-2 text-xs">
                 <DecisionButton
                   active={d.status === "approved"}
-                  onClick={() => setDecision(f.id, { status: "approved", text: f.realCapability }, f.realCapability)}
+                  onClick={() => setDecision(f.id, { status: "approved", text: f.text }, f.text)}
                 >
                   Approve
                 </DecisionButton>
                 <DecisionButton
                   active={d.status === "edited"}
-                  onClick={() => setDecision(f.id, { status: "edited" }, f.realCapability)}
+                  onClick={() => setDecision(f.id, { status: "edited" }, f.text)}
                 >
                   Edit
                 </DecisionButton>
                 <DecisionButton
                   active={d.status === "rejected"}
                   tone="reject"
-                  onClick={() => setDecision(f.id, { status: "rejected", text: f.realCapability }, f.realCapability)}
+                  onClick={() => setDecision(f.id, { status: "rejected", text: f.text }, f.text)}
                 >
                   Reject
                 </DecisionButton>
@@ -221,73 +237,18 @@ export function AutopsyStage({
   );
 }
 
-function PatternAndEconomics({ autopsy }: { autopsy: NonNullable<OpportunitySession["autopsy"]> }) {
-  return (
-    <div className="flex flex-col gap-3">
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">Recurring pattern</h3>
-        <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{autopsy.patternSummary}</p>
-      </div>
-      <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-        <h3 className="text-sm font-semibold text-zinc-900 dark:text-zinc-100">
-          What this is worth right now
-        </h3>
-        <p className="mt-1 text-sm text-zinc-700 dark:text-zinc-300">{autopsy.economicCapabilitySummary}</p>
-      </div>
-    </div>
-  );
-}
-
-function FindingReadCard({ finding }: { finding: NonNullable<OpportunitySession["autopsy"]>["findings"][number] }) {
+function Headline({ autopsy }: { autopsy: NonNullable<OpportunitySession["autopsy"]> }) {
   return (
     <div className="rounded-lg border border-zinc-200 p-4 dark:border-zinc-800">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-xs uppercase tracking-wide text-zinc-400 dark:text-zinc-600">
-            Stated as: {finding.statedRole}
-          </p>
-          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
-            {finding.userEdit ?? finding.realCapability}
-          </p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            <span className="font-medium">Problem solved: </span>
-            {finding.problemSolved}
-          </p>
-          <p className="text-sm text-zinc-700 dark:text-zinc-300">
-            <span className="font-medium">Outcome: </span>
-            {finding.outcomeDelivered}
-          </p>
-        </div>
-        <EvidenceBadge tag={finding.evidenceTag} />
-      </div>
+      <h3 className="text-base font-semibold text-zinc-900 dark:text-zinc-100">{autopsy.headline}</h3>
+      <p className="mt-1 text-sm text-zinc-600 dark:text-zinc-400">
+        {autopsy.capabilitiesIdentifiedCount} findings identified · {autopsy.highPotentialCount} high-potential
+      </p>
+      <ul className="mt-3 list-disc space-y-1 pl-4 text-sm text-zinc-700 dark:text-zinc-300">
+        {autopsy.strongestDiscoveries.map((d, i) => (
+          <li key={i}>{d}</li>
+        ))}
+      </ul>
     </div>
-  );
-}
-
-function DecisionButton({
-  active,
-  onClick,
-  children,
-  tone,
-}: {
-  active: boolean;
-  onClick: () => void;
-  children: React.ReactNode;
-  tone?: "reject";
-}) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`rounded-full px-3 py-1 font-medium transition-colors ${
-        active
-          ? tone === "reject"
-            ? "bg-red-600 text-white"
-            : "bg-zinc-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
-          : "border border-zinc-300 text-zinc-600 hover:bg-zinc-50 dark:border-zinc-700 dark:text-zinc-400 dark:hover:bg-zinc-900"
-      }`}
-    >
-      {children}
-    </button>
   );
 }

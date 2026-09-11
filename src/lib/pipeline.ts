@@ -44,7 +44,7 @@ export const STAGES: StageMeta[] = [
     label: "Profile",
     shortLabel: "Profile",
     description:
-      "Synthesize the Experience Intake into a structured Opportunity Profile: an identity summary and a set of capability statements, each tagged with its evidence strength.",
+      "Extract structured evidence from the Experience Intake, then build a professional capability profile from it — core, supporting, domain, transferable, commercial, operational, and technical capabilities, each separated into explicit evidence vs. inference.",
     produces: "A reviewable Opportunity Profile.",
     implemented: true,
   },
@@ -54,8 +54,8 @@ export const STAGES: StageMeta[] = [
     label: "Autopsy",
     shortLabel: "Autopsy",
     description:
-      "Decompose the approved Profile: translate job titles into real economic capability, translate skills into problems solved, translate activity into outcomes delivered. Surface the recurring pattern underneath the work.",
-    produces: "An Autopsy artifact — capability-over-title, problem-over-skill, outcome-over-activity findings.",
+      "Analyze the raw experience as evidence of economic capability: strongest and weakest evidence, hidden value, under-positioned capabilities, generic claims, missing evidence, patterns, risks, and opportunity clues.",
+    produces: "An Autopsy artifact — what the experience reveals, hides, weakens, or fails to communicate.",
     implemented: true,
   },
   {
@@ -64,9 +64,9 @@ export const STAGES: StageMeta[] = [
     label: "Capabilities",
     shortLabel: "Capabilities",
     description:
-      "Consolidate Autopsy findings into a ranked capability set — the economic capabilities you can credibly sell, independent of past job titles.",
-    produces: "A ranked Capability Map.",
-    implemented: false,
+      "Translate experience into capabilities that could have real economic value — distinct from a skill, a service, or an offer. 5-10 candidates, each with buyer problems, likely buyers, and evidence strength.",
+    produces: "A candidate Marketable Capability list.",
+    implemented: true,
   },
   {
     key: "market",
@@ -74,9 +74,9 @@ export const STAGES: StageMeta[] = [
     label: "Market",
     shortLabel: "Market",
     description:
-      "Test each capability against demand: buyer, problem severity, existing alternatives, willingness to pay, accessibility. Classify evidence as market-supported vs. hypothesis.",
-    produces: "A Market Read per capability.",
-    implemented: false,
+      "Research the real market for each capability: demand, buyer pain, existing solutions, competitive intensity, entry barriers. Distinguishes employment demand from service, consulting, and product demand.",
+    produces: "A Market Read per capability, sourced or explicitly labeled inference.",
+    implemented: true,
   },
   {
     key: "opportunities",

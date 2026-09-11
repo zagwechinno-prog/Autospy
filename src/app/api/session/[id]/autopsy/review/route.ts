@@ -38,7 +38,7 @@ export async function POST(
     if (decision) {
       finding.reviewStatus = decision.reviewStatus;
       if (decision.reviewStatus === "edited") {
-        finding.userEdit = decision.userEdit?.trim() || finding.realCapability;
+        finding.userEdit = decision.userEdit?.trim() || finding.text;
       }
     }
   }

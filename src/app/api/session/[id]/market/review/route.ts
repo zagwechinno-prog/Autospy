@@ -3,11 +3,10 @@ import { z } from "zod";
 import { getSession, saveSession, unlockStage } from "@/lib/store";
 
 const bodySchema = z.object({
-  capabilities: z.array(
+  reads: z.array(
     z.object({
       id: z.string(),
-      reviewStatus: z.enum(["approved", "edited", "rejected"]),
-      userEdit: z.string().max(1000).optional(),
+      reviewStatus: z.enum(["approved", "rejected"]),
     })
   ),
   approve: z.boolean(),
@@ -22,8 +21,8 @@ export async function POST(
   if (!session) {
     return NextResponse.json({ error: "Session not found" }, { status: 404 });
   }
-  if (!session.profile) {
-    return NextResponse.json({ error: "No profile to review yet." }, { status: 400 });
+  if (!session.market) {
+    return NextResponse.json({ error: "No market research to review yet." }, { status: 400 });
   }
 
   const parsed = bodySchema.safeParse(await req.json());
@@ -32,28 +31,25 @@ export async function POST(
   }
   const body = parsed.data;
 
-  const decisions = new Map(body.capabilities.map((c) => [c.id, c]));
-  for (const cap of session.profile.capabilities) {
-    const decision = decisions.get(cap.id);
+  const decisions = new Map(body.reads.map((r) => [r.id, r]));
+  for (const read of session.market.reads) {
+    const decision = decisions.get(read.id);
     if (decision) {
-      cap.reviewStatus = decision.reviewStatus;
-      if (decision.reviewStatus === "edited") {
-        cap.userEdit = decision.userEdit?.trim() || cap.name;
-      }
+      read.reviewStatus = decision.reviewStatus;
     }
   }
 
   if (body.approve) {
-    const stillPending = session.profile.capabilities.some((c) => c.reviewStatus === "pending");
+    const stillPending = session.market.reads.some((r) => r.reviewStatus === "pending");
     if (stillPending) {
       return NextResponse.json(
-        { error: "Every capability must be approved, edited, or rejected before the Profile can be approved." },
+        { error: "Every market read must be approved or rejected before the Market stage can be approved." },
         { status: 400 }
       );
     }
-    session.profile.approved = true;
-    session.stageStatus.profile = "completed";
-    unlockStage(session, "autopsy");
+    session.market.approved = true;
+    session.stageStatus.market = "completed";
+    unlockStage(session, "opportunities");
   }
 
   await saveSession(session);

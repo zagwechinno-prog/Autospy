@@ -19,7 +19,7 @@ export async function POST(
   }
 
   try {
-    session.autopsy = await synthesizeAutopsy(session.experience, session.profile);
+    session.autopsy = await synthesizeAutopsy(session.experience);
     session.stageStatus.autopsy = "in_progress";
     await saveSession(session);
     return NextResponse.json(session);
